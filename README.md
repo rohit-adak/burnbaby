@@ -28,9 +28,9 @@ A Claude Code mod that shows what your session is costing you, live, in a slim t
 - **Where it went**: spend broken down by what Claude was doing and by token type.
 - **Re-sent every message**: what each message carries along (messages, tools, system prompt) and its price.
 
-![Usage breakdown](screenshots/usage-breakdown.png)
+![More panel: pace, this session, health](screenshots/more-pace-health.png)
 
-![Limits and pace (earlier version of the panel)](screenshots/limits-panel.png)
+![More panel: alerts, where it went, re-sent every message](screenshots/more-alerts-breakdown.png)
 
 ## Install
 
