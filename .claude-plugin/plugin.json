@@ -1,5 +1,5 @@
 {
-  "name": "usage-meter",
+  "name": "laude",
   "version": "0.1.0",
   "description": "Session usage dashboard: context, cache, 5h/weekly limit bars with time-vs-limit pace, anomaly flags and one-press fixes (compact, sonnet, cache warm-up).",
   "types": "./types/index.d.ts"

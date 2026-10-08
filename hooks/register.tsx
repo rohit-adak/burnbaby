@@ -3,38 +3,38 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { AlertCfg, Cat, Goal, Limit, Step, Tally, Ttl, Turn } from '../types'
 
-const PANE = 'usage-meter'
+const PANE = 'laude'
 const MIN = 60_000
 const HOUR = 60 * MIN
 const WINDOWS: Record<string, number> = { five_hour: 5 * HOUR, seven_day: 7 * 24 * HOUR }
 const LABELS: Record<string, string> = { five_hour: 'Session (5h)', seven_day: 'Weekly (7d)' }
 
-const steps = atom({ plugin: 'usage-meter', key: 'steps' } as const, [])
-const limits = atom({ plugin: 'usage-meter', key: 'limits' } as const, [])
-const ctxTokens = atom({ plugin: 'usage-meter', key: 'ctxTokens' } as const, 0)
-const ctxWindow = atom({ plugin: 'usage-meter', key: 'ctxWindow' } as const, 0)
-const ctxPercent = atom({ plugin: 'usage-meter', key: 'ctxPercent' } as const, 0)
-const costUsd = atom({ plugin: 'usage-meter', key: 'costUsd' } as const, 0)
-const cats = atom({ plugin: 'usage-meter', key: 'cats' } as const, [])
-const now = atom({ plugin: 'usage-meter', key: 'now' } as const, 0)
-const startedAt = atom({ plugin: 'usage-meter', key: 'startedAt' } as const, 0)
-const lastStepAt = atom({ plugin: 'usage-meter', key: 'lastStepAt' } as const, 0)
-const ttl = atom({ plugin: 'usage-meter', key: 'ttl' } as const, 'unknown')
-const model = atom({ plugin: 'usage-meter', key: 'model' } as const, '')
-const modSpend = atom({ plugin: 'usage-meter', key: 'modSpend' } as const, { warmups: 0, compacts: 0, tokens: 0, usd: 0 })
-const isHard = atom({ plugin: 'usage-meter', key: 'isHard' } as const, false)
+const steps = atom({ plugin: 'laude', key: 'steps' } as const, [])
+const limits = atom({ plugin: 'laude', key: 'limits' } as const, [])
+const ctxTokens = atom({ plugin: 'laude', key: 'ctxTokens' } as const, 0)
+const ctxWindow = atom({ plugin: 'laude', key: 'ctxWindow' } as const, 0)
+const ctxPercent = atom({ plugin: 'laude', key: 'ctxPercent' } as const, 0)
+const costUsd = atom({ plugin: 'laude', key: 'costUsd' } as const, 0)
+const cats = atom({ plugin: 'laude', key: 'cats' } as const, [])
+const now = atom({ plugin: 'laude', key: 'now' } as const, 0)
+const startedAt = atom({ plugin: 'laude', key: 'startedAt' } as const, 0)
+const lastStepAt = atom({ plugin: 'laude', key: 'lastStepAt' } as const, 0)
+const ttl = atom({ plugin: 'laude', key: 'ttl' } as const, 'unknown')
+const model = atom({ plugin: 'laude', key: 'model' } as const, '')
+const modSpend = atom({ plugin: 'laude', key: 'modSpend' } as const, { warmups: 0, compacts: 0, tokens: 0, usd: 0 })
+const isHard = atom({ plugin: 'laude', key: 'isHard' } as const, false)
 const EMPTY_TALLY: Tally = {
   requests: 0,
   byKind: {},
   byModel: {},
   byType: { input: [0, 0], output: [0, 0], read: [0, 0], write: [0, 0] },
 }
-const tally = atom({ plugin: 'usage-meter', key: 'tally' } as const, EMPTY_TALLY)
-const isDemo = atom({ plugin: 'usage-meter', key: 'isDemo' } as const, false)
-const goals = atom({ plugin: 'usage-meter', key: 'goals' } as const, [] as Goal[])
-const turnAt = atom({ plugin: 'usage-meter', key: 'turnAt' } as const, 0)
-const draft = atom({ plugin: 'usage-meter', key: 'draft' } as const, null as Turn | null)
-const journal = atom({ plugin: 'usage-meter', key: 'journal' } as const, [] as Turn[])
+const tally = atom({ plugin: 'laude', key: 'tally' } as const, EMPTY_TALLY)
+const isDemo = atom({ plugin: 'laude', key: 'isDemo' } as const, false)
+const goals = atom({ plugin: 'laude', key: 'goals' } as const, [] as Goal[])
+const turnAt = atom({ plugin: 'laude', key: 'turnAt' } as const, 0)
+const draft = atom({ plugin: 'laude', key: 'draft' } as const, null as Turn | null)
+const journal = atom({ plugin: 'laude', key: 'journal' } as const, [] as Turn[])
 const DEFAULT_ALERTS: AlertCfg = {
   session: { on: true, at: 80 },
   weekly: { on: true, at: 70 },
@@ -42,12 +42,12 @@ const DEFAULT_ALERTS: AlertCfg = {
   cost: { on: false, at: 20 },
   cold: { on: false, at: 2 },
 }
-const alertCfg = atom({ plugin: 'usage-meter', key: 'alertCfg' } as const, DEFAULT_ALERTS)
-const fired = atom({ plugin: 'usage-meter', key: 'fired' } as const, [] as string[])
-const planning = atom({ plugin: 'usage-meter', key: 'planning' } as const, false)
-const dismissed = atom({ plugin: 'usage-meter', key: 'dismissed' } as const, [] as string[])
-const frame = atom({ plugin: 'usage-meter', key: 'frame' } as const, 0)
-const activity = atom({ plugin: 'usage-meter', key: 'activity' } as const, { kind: 'idle', n: 0 })
+const alertCfg = atom({ plugin: 'laude', key: 'alertCfg' } as const, DEFAULT_ALERTS)
+const fired = atom({ plugin: 'laude', key: 'fired' } as const, [] as string[])
+const planning = atom({ plugin: 'laude', key: 'planning' } as const, false)
+const dismissed = atom({ plugin: 'laude', key: 'dismissed' } as const, [] as string[])
+const frame = atom({ plugin: 'laude', key: 'frame' } as const, 0)
+const activity = atom({ plugin: 'laude', key: 'activity' } as const, { kind: 'idle', n: 0 })
 
 export type Level = 'bad' | 'warn' | 'info' | 'ok'
 export type Action = 'compact' | 'sonnet' | 'warm'

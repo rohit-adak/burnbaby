@@ -1,4 +1,4 @@
-# usage-meter
+# laude
 
 A Claude Code mod that shows what your session is costing you, live, in a slim two-line band above the prompt: your session and weekly limits, whether you're burning them faster than the clock, whether the prompt cache is warm, how full the context is, and what to do about it.
 
@@ -37,7 +37,7 @@ A Claude Code mod that shows what your session is costing you, live, in a slim t
 In a Claude Code terminal session, type:
 
 ```
-/plugin install usage-meter --marketplace rohit-adak/usage-meter
+/plugin install laude --marketplace rohit-adak/laude
 ```
 
 Answer `y` to add the marketplace, then pick a scope (user scope loads it in every session). This repository is private, so your GitHub account needs access to it.
@@ -45,8 +45,8 @@ Answer `y` to add the marketplace, then pick a scope (user scope loads it in eve
 ### Run from a local clone (development)
 
 ```
-git clone https://github.com/rohit-adak/usage-meter.git
-claude --plugin-dir ./usage-meter
+git clone https://github.com/rohit-adak/laude.git
+claude --plugin-dir ./laude
 ```
 
 ## Usage
