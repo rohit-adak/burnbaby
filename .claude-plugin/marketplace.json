@@ -1,5 +1,5 @@
 {
-  "name": "laude",
+  "name": "burnbaby",
   "owner": { "name": "rohit-adak" },
-  "plugins": [{ "name": "laude", "source": "./" }]
+  "plugins": [{ "name": "burnbaby", "source": "./" }]
 }

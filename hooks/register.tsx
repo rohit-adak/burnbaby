@@ -3,38 +3,38 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { AlertCfg, Cat, Goal, Limit, Step, Tally, Ttl, Turn } from '../types'
 
-const PANE = 'laude'
+const PANE = 'burnbaby'
 const MIN = 60_000
 const HOUR = 60 * MIN
 const WINDOWS: Record<string, number> = { five_hour: 5 * HOUR, seven_day: 7 * 24 * HOUR }
 const LABELS: Record<string, string> = { five_hour: 'Session (5h)', seven_day: 'Weekly (7d)' }
 
-const steps = atom({ plugin: 'laude', key: 'steps' } as const, [])
-const limits = atom({ plugin: 'laude', key: 'limits' } as const, [])
-const ctxTokens = atom({ plugin: 'laude', key: 'ctxTokens' } as const, 0)
-const ctxWindow = atom({ plugin: 'laude', key: 'ctxWindow' } as const, 0)
-const ctxPercent = atom({ plugin: 'laude', key: 'ctxPercent' } as const, 0)
-const costUsd = atom({ plugin: 'laude', key: 'costUsd' } as const, 0)
-const cats = atom({ plugin: 'laude', key: 'cats' } as const, [])
-const now = atom({ plugin: 'laude', key: 'now' } as const, 0)
-const startedAt = atom({ plugin: 'laude', key: 'startedAt' } as const, 0)
-const lastStepAt = atom({ plugin: 'laude', key: 'lastStepAt' } as const, 0)
-const ttl = atom({ plugin: 'laude', key: 'ttl' } as const, 'unknown')
-const model = atom({ plugin: 'laude', key: 'model' } as const, '')
-const modSpend = atom({ plugin: 'laude', key: 'modSpend' } as const, { warmups: 0, compacts: 0, tokens: 0, usd: 0 })
-const isHard = atom({ plugin: 'laude', key: 'isHard' } as const, false)
+const steps = atom({ plugin: 'burnbaby', key: 'steps' } as const, [])
+const limits = atom({ plugin: 'burnbaby', key: 'limits' } as const, [])
+const ctxTokens = atom({ plugin: 'burnbaby', key: 'ctxTokens' } as const, 0)
+const ctxWindow = atom({ plugin: 'burnbaby', key: 'ctxWindow' } as const, 0)
+const ctxPercent = atom({ plugin: 'burnbaby', key: 'ctxPercent' } as const, 0)
+const costUsd = atom({ plugin: 'burnbaby', key: 'costUsd' } as const, 0)
+const cats = atom({ plugin: 'burnbaby', key: 'cats' } as const, [])
+const now = atom({ plugin: 'burnbaby', key: 'now' } as const, 0)
+const startedAt = atom({ plugin: 'burnbaby', key: 'startedAt' } as const, 0)
+const lastStepAt = atom({ plugin: 'burnbaby', key: 'lastStepAt' } as const, 0)
+const ttl = atom({ plugin: 'burnbaby', key: 'ttl' } as const, 'unknown')
+const model = atom({ plugin: 'burnbaby', key: 'model' } as const, '')
+const modSpend = atom({ plugin: 'burnbaby', key: 'modSpend' } as const, { warmups: 0, compacts: 0, tokens: 0, usd: 0 })
+const isHard = atom({ plugin: 'burnbaby', key: 'isHard' } as const, false)
 const EMPTY_TALLY: Tally = {
   requests: 0,
   byKind: {},
   byModel: {},
   byType: { input: [0, 0], output: [0, 0], read: [0, 0], write: [0, 0] },
 }
-const tally = atom({ plugin: 'laude', key: 'tally' } as const, EMPTY_TALLY)
-const isDemo = atom({ plugin: 'laude', key: 'isDemo' } as const, false)
-const goals = atom({ plugin: 'laude', key: 'goals' } as const, [] as Goal[])
-const turnAt = atom({ plugin: 'laude', key: 'turnAt' } as const, 0)
-const draft = atom({ plugin: 'laude', key: 'draft' } as const, null as Turn | null)
-const journal = atom({ plugin: 'laude', key: 'journal' } as const, [] as Turn[])
+const tally = atom({ plugin: 'burnbaby', key: 'tally' } as const, EMPTY_TALLY)
+const isDemo = atom({ plugin: 'burnbaby', key: 'isDemo' } as const, false)
+const goals = atom({ plugin: 'burnbaby', key: 'goals' } as const, [] as Goal[])
+const turnAt = atom({ plugin: 'burnbaby', key: 'turnAt' } as const, 0)
+const draft = atom({ plugin: 'burnbaby', key: 'draft' } as const, null as Turn | null)
+const journal = atom({ plugin: 'burnbaby', key: 'journal' } as const, [] as Turn[])
 const DEFAULT_ALERTS: AlertCfg = {
   session: { on: true, at: 80 },
   weekly: { on: true, at: 70 },
@@ -42,12 +42,12 @@ const DEFAULT_ALERTS: AlertCfg = {
   cost: { on: false, at: 20 },
   cold: { on: false, at: 2 },
 }
-const alertCfg = atom({ plugin: 'laude', key: 'alertCfg' } as const, DEFAULT_ALERTS)
-const fired = atom({ plugin: 'laude', key: 'fired' } as const, [] as string[])
-const planning = atom({ plugin: 'laude', key: 'planning' } as const, false)
-const dismissed = atom({ plugin: 'laude', key: 'dismissed' } as const, [] as string[])
-const frame = atom({ plugin: 'laude', key: 'frame' } as const, 0)
-const activity = atom({ plugin: 'laude', key: 'activity' } as const, { kind: 'idle', n: 0 })
+const alertCfg = atom({ plugin: 'burnbaby', key: 'alertCfg' } as const, DEFAULT_ALERTS)
+const fired = atom({ plugin: 'burnbaby', key: 'fired' } as const, [] as string[])
+const planning = atom({ plugin: 'burnbaby', key: 'planning' } as const, false)
+const dismissed = atom({ plugin: 'burnbaby', key: 'dismissed' } as const, [] as string[])
+const frame = atom({ plugin: 'burnbaby', key: 'frame' } as const, 0)
+const activity = atom({ plugin: 'burnbaby', key: 'activity' } as const, { kind: 'idle', n: 0 })
 
 export type Level = 'bad' | 'warn' | 'info' | 'ok'
 export type Action = 'compact' | 'sonnet' | 'warm'

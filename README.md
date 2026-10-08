@@ -1,6 +1,8 @@
-# laude
+# burnbaby
 
-A Claude Code mod that shows what your session is costing you, live, in a slim two-line band above the prompt: your session and weekly limits, whether you're burning them faster than the clock, whether the prompt cache is warm, how full the context is, and what to do about it.
+**Watch your Claude Code session burn, before it burns you.**
+
+burnbaby is a Claude Code mod that shows what your session is costing you, live, in a slim two-line band above the prompt: your session and weekly limits, whether you're burning them faster than the clock, whether the prompt cache is warm, how full the context is, and what to do about it.
 
 ![The band above the prompt](screenshots/band.png)
 
@@ -15,7 +17,7 @@ A Claude Code mod that shows what your session is costing you, live, in a slim t
 | **Context %** | How full the context window is. |
 | **⚠ N THINGS NEED YOU** | Appears only when something is wrong (context nearly full, cache cold on a big context, limits burning fast, or a threshold you set). Click it to see what's wrong and a one-press fix. Each item can be dismissed. |
 | **More ›** | The full panel (see below). |
-| **Mascot** | A baby Claude that blinks, smiles, breathes, and puts on a headband when it's reasoning hard. |
+| **The baby** | burnbaby's mascot: a pixel baby that blinks, smiles, breathes, and puts on a headband when it's reasoning hard. |
 | **🎯 ●●○○○ 2/5** | Goals for the current task: Claude's own task list, or a quick plan with time estimates made from your prompt. Click for steps, time spent, time left, and journey summaries (this session / today / this week). |
 | **⛽ $0.23** | What the mod itself has spent (cache warm-ups, plans). Hidden while it's free. |
 
@@ -37,7 +39,7 @@ A Claude Code mod that shows what your session is costing you, live, in a slim t
 In a Claude Code terminal session, type:
 
 ```
-/plugin install laude --marketplace rohit-adak/laude
+/plugin install burnbaby --marketplace rohit-adak/burnbaby
 ```
 
 Answer `y` to add the marketplace, then pick a scope (user scope loads it in every session). This repository is private, so your GitHub account needs access to it.
@@ -45,8 +47,8 @@ Answer `y` to add the marketplace, then pick a scope (user scope loads it in eve
 ### Run from a local clone (development)
 
 ```
-git clone https://github.com/rohit-adak/laude.git
-claude --plugin-dir ./laude
+git clone https://github.com/rohit-adak/burnbaby.git
+claude --plugin-dir ./burnbaby
 ```
 
 ## Usage
