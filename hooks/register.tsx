@@ -49,7 +49,19 @@ const frame = atom({ plugin: 'burnbaby', key: 'frame' } as const, 0)
 const activity = atom({ plugin: 'burnbaby', key: 'activity' } as const, { kind: 'idle', n: 0 })
 
 export type Level = 'bad' | 'warn' | 'info' | 'ok'
-export type Action = 'compact' | 'sonnet' | 'warm'
+export type Action = 'compact' | 'cheaper' | 'warm'
+
+export type Tier = { id: string; name: string }
+
+// One step down the price ladder from the model in use; nothing below Haiku.
+export const cheaperTier = (model: string): Tier | undefined =>
+  /fable|mythos/i.test(model) ? { id: 'opus', name: 'Opus' }
+    : /opus/i.test(model) ? { id: 'sonnet', name: 'Sonnet' }
+    : /sonnet/i.test(model) ? { id: 'haiku', name: 'Haiku' }
+    : undefined
+
+export const tierName = (model: string): string =>
+  /fable|mythos/i.test(model) ? 'Fable' : /opus/i.test(model) ? 'Opus' : /sonnet/i.test(model) ? 'Sonnet' : /haiku/i.test(model) ? 'Haiku' : 'This model'
 export type Finding = { level: Level; title: string; detail: string; action?: Action }
 
 export type Snapshot = {
@@ -394,7 +406,7 @@ export const overRules = (cfg: AlertCfg, s: Snapshot, cost: number): Finding[] =
     const rule = cfg[r.key]
     const v = readingOf(r.key, s, cost)
     if (!rule.on || v === undefined || v < rule.at) return []
-    const action: Action | undefined = r.key === 'context' || r.key === 'cold' ? 'compact' : r.key === 'cost' ? undefined : 'sonnet'
+    const action: Action | undefined = r.key === 'context' || r.key === 'cold' ? 'compact' : r.key === 'cost' || !cheaperTier(s.model) ? undefined : 'cheaper'
 
     return [{
       level: 'bad' as Level,
@@ -419,7 +431,7 @@ export const inferTtl = (prev: Ttl, gap: number, step: Step): Ttl => {
 
 export const analyze = (s: Snapshot): Finding[] => {
   const out: Finding[] = []
-  const isOpus = /opus/i.test(s.model)
+  const down = cheaperTier(s.model)
   const views = s.limits.map(l => ({ l, v: limitView(l, s.now) }))
   const session = views.find(x => x.l.kind === 'five_hour')?.v
   const week = views.find(x => x.l.kind === 'seven_day')?.v
@@ -446,17 +458,17 @@ export const analyze = (s: Snapshot): Finding[] => {
         level: v.ahead >= gap * 2 ? 'bad' : 'warn',
         title: `${name} limit burning ahead of the clock`,
         detail: `${Math.round(v.used)}% used but only ${Math.round(v.time)}% of the window has passed.`,
-        action: isOpus ? 'sonnet' : 'compact',
+        action: down ? 'cheaper' : 'compact',
       })
     }
   }
 
-  if (isOpus && ((session?.used ?? 0) >= 50 || (week?.used ?? 0) >= 60)) {
+  if (down && ((session?.used ?? 0) >= 50 || (week?.used ?? 0) >= 60)) {
     out.push({
       level: 'warn',
-      title: 'Opus is on while limits are filling',
-      detail: 'Opus drains limits faster. Sonnet handles routine edits and reads fine.',
-      action: 'sonnet',
+      title: `${tierName(s.model)} is on while limits are filling`,
+      detail: `${tierName(s.model)} drains limits faster. ${down.name} handles routine edits and reads fine.`,
+      action: 'cheaper',
     })
   }
 
@@ -559,9 +571,19 @@ export const summaryText = (s: Snapshot, cost: number): string => {
   return lines.join('\n')
 }
 
-const FIXES: Record<Action, string> = {
+const fixText = (a: Action, model: string): string => {
+  const down = cheaperTier(model)
+  if (a === 'cheaper') {
+    return down
+      ? `Press Use ${down.name} below (or type /model ${down.id}). ${down.name} costs less per token than ${tierName(model)} and spends limits slower.`
+      : 'Already on the cheapest model.'
+  }
+
+  return FIXES[a as 'compact' | 'warm']
+}
+
+const FIXES = {
   compact: 'Press Compact below (or type /compact). It summarizes the history so every later turn re-sends far less.',
-  sonnet: 'Press Use Sonnet below (or type /model sonnet). Sonnet costs about half of Opus per token and spends limits slower.',
   warm: 'Press Warm cache below before you step away. It keeps the cache alive so your next message stays cheap.',
 }
 
@@ -684,13 +706,19 @@ async function compact($: EngineInterface) {
   $.ui.toast('Compacted.')
 }
 
-async function sonnet($: EngineInterface) {
+async function goCheaper($: EngineInterface) {
+  const down = cheaperTier(await read($, model))
+  if (!down) {
+    $.ui.toast('Already on the cheapest model.')
+
+    return
+  }
   try {
-    await $.command.run({ command: 'model', args: 'sonnet' })
+    await $.command.run({ command: 'model', args: down.id })
     await refresh($)
-    $.ui.toast('Switched to Sonnet. The next message re-writes the cache once.')
+    $.ui.toast(`Switched to ${down.name}. The next message re-writes the cache once.`)
   } catch {
-    $.ui.toast('Could not switch for you. Type /model sonnet.')
+    $.ui.toast(`Could not switch for you. Type /model ${down.id}.`)
   }
 }
 
@@ -1065,8 +1093,8 @@ export const register: Register = on => {
             <Text>  </Text>
             <Button key="compact" label="Compact" hotkey="c" variant={actions.has('compact') ? 'primary' : undefined} onPress={() => compact($)} />
             <Text>  </Text>
-            <Button key="sonnet" label="Use Sonnet" hotkey="s" variant={actions.has('sonnet') ? 'primary' : undefined} onPress={() => sonnet($)} />
-            <Text>  </Text>
+            {cheaperTier(snap.model) && <Button key="cheaper" label={`Use ${cheaperTier(snap.model)?.name}`} hotkey="s" variant={actions.has('cheaper') ? 'primary' : undefined} onPress={() => goCheaper($)} />}
+            {cheaperTier(snap.model) && <Text>  </Text>}
             <Button key="warm" label="Warm cache" hotkey="w" variant={actions.has('warm') ? 'primary' : undefined} onPress={() => warm($)} />
           </Box>
         </Box>
@@ -1143,6 +1171,7 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: /^pace-/ }, async ($, e) => {
     const { Box, Text } = $.ui.resolve(e)
     const kind = String(e.requestId).replace(/^pace-/, '')
+    const down = cheaperTier(await read($, model))
     const at = (await read($, now)) || (await $.clock.now())
     const l = (await read($, limits)).find(x => x.kind === kind)
     const win = WINDOWS[kind]
@@ -1200,7 +1229,7 @@ export const register: Register = on => {
         {rate > 1 && (
           <Box flexDirection="column" marginTop={1}>
             <Text bold>To slow down</Text>
-            <Text>  • Switch routine work to Sonnet (/model sonnet).</Text>
+            {down && <Text>  • Switch routine work to {down.name} (/model {down.id}).</Text>}
             <Text>  • Compact or /clear long sessions so each turn re-sends less.</Text>
             <Text>  • Avoid long idle gaps that let the cache go cold.</Text>
           </Box>
@@ -1323,8 +1352,8 @@ export const register: Register = on => {
       model: await read($, model),
     }
     const list = unseen([...overRules(await read($, alertCfg), snap, await read($, costUsd)), ...analyze(snap).filter(f => f.level === 'bad' || f.level === 'warn')], await read($, dismissed))
-    const run = (a: Action) => (a === 'compact' ? compact($) : a === 'sonnet' ? sonnet($) : warm($))
-    const label: Record<Action, string> = { compact: 'Compact now', sonnet: 'Use Sonnet', warm: 'Warm cache' }
+    const run = (a: Action) => (a === 'compact' ? compact($) : a === 'cheaper' ? goCheaper($) : warm($))
+    const label: Record<Action, string> = { compact: 'Compact now', cheaper: `Use ${cheaperTier(snap.model)?.name ?? 'cheaper model'}`, warm: 'Warm cache' }
 
     if (list.length === 0) {
       return (
@@ -1347,7 +1376,7 @@ export const register: Register = on => {
             <Text bold color="black" backgroundColor={levelColor[f.level]}>{` ${n + 1}. ${f.level === 'bad' ? 'URGENT' : 'WARNING'} `}</Text>
             <Text bold color={levelColor[f.level]}>{f.title}</Text>
             <Text><Text bold>What's wrong  </Text>{f.detail}</Text>
-            <Text><Text bold>How to fix    </Text>{f.action ? FIXES[f.action] : 'Nothing to press: keep it in mind as you work, and it clears by itself.'}</Text>
+            <Text><Text bold>How to fix    </Text>{f.action ? fixText(f.action, snap.model) : 'Nothing to press: keep it in mind as you work, and it clears by itself.'}</Text>
             {f.action && (
               <Box marginTop={1}>
                 <Button key={`fix-${n}`} label={label[f.action]} variant="primary" autoFocus={n === 0 ? true : undefined} onPress={() => run(f.action as Action)} />

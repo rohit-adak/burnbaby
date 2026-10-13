@@ -1,6 +1,6 @@
 import { test, expect } from 'claude-code/testing'
 
-import { addTally, advancePlan, analyze, parsePlan, overRules, applyGoals, summarize, goalForecast, barSegs, burn, costParts, inferTtl, limitView, nextCost } from './register'
+import { addTally, advancePlan, analyze, cheaperTier, parsePlan, overRules, applyGoals, summarize, goalForecast, barSegs, burn, costParts, inferTtl, limitView, nextCost } from './register'
 import type { Snapshot } from './register'
 
 const MIN = 60_000
@@ -42,7 +42,7 @@ test('opus burning ahead of pace suggests sonnet and flags context', () => {
     ctxPercent: 70,
     limits: [{ kind: 'five_hour', percentUsed: 70, resetsAt }],
   })
-  expect(found.some(f => f.action === 'sonnet')).toBe(true)
+  expect(found.some(f => f.action === 'cheaper')).toBe(true)
   expect(found.some(f => f.action === 'compact')).toBe(true)
 })
 
@@ -127,4 +127,12 @@ test('a quick plan parses and moves along with elapsed time', () => {
   expect(moved[0].status).toBe('completed')
   expect(moved[1].status).toBe('in_progress')
   expect(goalForecast(moved, 0).left).toBe(3 * MIN)
+})
+
+test('the cheaper model steps down one tier from whatever is running', () => {
+  expect(cheaperTier('claude-fable-5-1')?.id).toBe('opus')
+  expect(cheaperTier('claude-opus-5-5')?.id).toBe('sonnet')
+  expect(cheaperTier('claude-sonnet-5-5')?.id).toBe('haiku')
+  expect(cheaperTier('claude-haiku-5-5')).toBeUndefined()
+  expect(analyze({ ...base, model: 'claude-haiku-5-5' }).some(f => f.action === 'cheaper')).toBe(false)
 })
