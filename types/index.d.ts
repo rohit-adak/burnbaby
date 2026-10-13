@@ -68,7 +68,6 @@ declare module 'claude-code' {
       draft: Turn | null
       journal: Turn[]
       turnAt: number
-      isDemo: boolean
       tally: Tally
       isHard: boolean
       modSpend: { warmups: number; compacts: number; tokens: number; usd: number }
