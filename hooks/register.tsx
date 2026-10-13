@@ -95,6 +95,11 @@ export const limitView = (l: Limit, at: number): LimitView => {
       ? clamp(((at - (reset - win)) / win) * 100)
       : undefined
   const resetIn = reset !== undefined && !Number.isNaN(reset) ? reset - at : undefined
+  // The reading only changes when a reply arrives, so once its window has rolled over the
+  // old percent is history: show the fresh, empty window instead of a stale "on track".
+  if (resetIn !== undefined && resetIn <= 0) {
+    return { label: LABELS[l.kind] ?? l.kind, used: 0, time: 0, resetIn: undefined, ahead: 0 }
+  }
 
   return {
     label: LABELS[l.kind] ?? l.kind,
@@ -757,7 +762,7 @@ export const register: Register = on => {
     const at = await $.clock.now()
     await update($, startedAt, () => at)
     await refresh($)
-    $.clock.every(15_000, () => refresh($))
+    $.clock.every(10_000, () => refresh($))
     $.clock.every(500, () => update($, frame, n => n + 1))
     $.clock.every(2_000, () => stepPlan($))
 
@@ -843,8 +848,6 @@ export const register: Register = on => {
       const sid = (await $.session.usage()).startedAt
       const usd = (await $.session.usage()).cost?.usd ?? 0
       await update($, draft, () => ({ sid, at, ask: e.text.replace(/\s+/g, ' ').trim().slice(0, 160), ms: 0, usd, tools: 0, edits: [], goals: [] }))
-      const ask = e.text.trim()
-      if (!ask.startsWith('/') && ask.split(/\s+/).length >= 4) $.clock.after(1, () => planAsk($, ask.slice(0, 2000)))
     }
 
     return next(e)
@@ -1327,7 +1330,7 @@ export const register: Register = on => {
         <Box flexDirection="column" marginTop={1}>
           {row('Your prompts', '0 tokens', 'The meter adds nothing to what Claude reads, so your cache and turns are untouched.')}
           {row('Mascot and bars', '0 tokens', 'The blinking and the redraws happen on your machine only (about twice a second).')}
-          {row('Usage readings', '0 tokens', 'Limits, context and cost are read from the session every 15s for free.')}
+          {row('Usage readings', '0 tokens', 'Limits, context and cost are read from the session every 10s for free.')}
           {row('Warm-ups', x.warmups === 0 ? 'none yet' : `${x.warmups} · ${usd(x.usd)}`, 'Each Warm cache press asks Claude one tiny question over your context: cheap while warm, full price if already cold.', x.warmups === 0 ? 'success' : 'warning')}
           {row('Compacts from the meter', x.compacts === 0 ? 'none yet' : `${x.compacts}`, 'Compacting costs one summary call, but makes every message after it cheaper.', x.compacts === 0 ? 'success' : 'warning')}
         </Box>
@@ -1601,7 +1604,7 @@ export const register: Register = on => {
     const ctxC = snap.ctxPercent >= 85 ? 'error' : snap.ctxPercent >= 60 ? 'warning' : 'success'
     const hitC = snap.steps.length === 0 ? 'inactive' : hit >= 85 ? 'success' : hit >= 70 ? 'warning' : 'error'
     const nc = nextCost(snap.model, snap.ctxTokens, snap.ttl)
-    const W = 8
+    const W = 6
     const paceWord = (v: LimitView): [string, string] =>
       v.time === undefined ? ['', 'subtle']
         : v.ahead >= 10 ? ['too fast', 'error']
@@ -1652,7 +1655,7 @@ export const register: Register = on => {
           </Button>
         )}
         <Text wrap="truncate-end">
-          {v.resetIn !== undefined && <Text>{sep}<Text dimColor>resets in {fmtDur(v.resetIn)}</Text></Text>}
+          {v.resetIn !== undefined && <Text>{sep}<Text dimColor>resets {fmtDur(v.resetIn)}</Text></Text>}
         </Text>
         </Box>
       )
@@ -1660,29 +1663,29 @@ export const register: Register = on => {
 
     return (
       <Box backgroundColor="#232a33" paddingX={2} flexGrow={1} alignItems="center">
-        <Box flexDirection="column" flexShrink={0} marginRight={4}>
-          {limitRow('Session  ', byKind('five_hour'))}
-          {limitRow('Weekly   ', byKind('seven_day'))}
+        <Box flexDirection="column" flexShrink={0} marginRight={5}>
+          {limitRow('Session ', byKind('five_hour'))}
+          {limitRow('Weekly  ', byKind('seven_day'))}
         </Box>
-        <Box flexDirection="column" flexShrink={1} minWidth={20} marginRight={3}>
+        <Box flexDirection="column" flexShrink={0} marginRight={4}>
           <Box>
             <Button key="cache-warm" plain onPress={() => $.ui.open({ id: 'cache', title: 'Cache' })}>
-              <Text bold underline color={sc}>{last0 ? '⏳ Cache starts after first reply' : isCold ? '🧊 Cache is cold' : '🔥 Cache is warm'}</Text>
+              <Text bold underline color={sc}>{last0 ? '⏳ Cache starts after reply' : isCold ? '🧊 Cache cold' : '🔥 Cache warm'}</Text>
             </Button>
             <Text wrap="truncate-end">
-              {!last0 && !isCold && <Text dimColor> for {fmtDur(left)}</Text>}
-              {!last0 && <Text dimColor> · next message </Text>}
+              {!last0 && !isCold && <Text dimColor> {fmtDur(left)}</Text>}
+              {!last0 && <Text dimColor> · next </Text>}
               {!last0 && <Text bold color={isCold ? 'error' : 'success'}>{usd(isCold ? nc.cold : nc.warm)}</Text>}
             </Text>
           </Box>
           <Box>
             {!last0 && (
               <Button key="cache-cold" plain onPress={() => $.ui.open({ id: 'cache', title: 'Cache' })}>
-                <Text underline color={isCold ? 'subtle' : 'warning'}>{isCold ? 'Was' : 'If it goes cold'}</Text>
+                <Text underline color={isCold ? 'subtle' : 'warning'}>{isCold ? 'Was' : 'If cold'}</Text>
               </Button>
             )}
             <Text wrap="truncate-end">
-              {!last0 && <Text dimColor>{isCold ? ' ' : ' · next message '}</Text>}
+              {!last0 && <Text dimColor>{isCold ? ' ' : ' · next '}</Text>}
               {!last0 && <Text color={isCold ? 'success' : 'warning'}>{usd(isCold ? nc.warm : nc.cold)}</Text>}
               {!last0 && isCold && <Text dimColor> while warm · compact first</Text>}
             </Text>
@@ -1690,13 +1693,13 @@ export const register: Register = on => {
         </Box>
         <Box flexDirection="column" flexShrink={0}>
           <Text>
-            <Text bold>Context  </Text>
+            <Text bold>Context </Text>
             <Text color={ctxC}>{snap.ctxPercent}%</Text>
           </Text>
-          <Button key="details" plain label="More ›" onPress={() => $.ui.open({ id: PANE, title: 'More' })} />
+          <Text> </Text>
         </Box>
         {top && (
-          <Box flexDirection="column" flexShrink={0} marginLeft={4}>
+          <Box flexDirection="column" flexShrink={0} marginLeft={3}>
             <Button key="alert-top" plain onPress={() => $.ui.open({ id: 'issues', title: 'What needs fixing', focus: true })}>
               <Text bold color="black" backgroundColor={levelColor[top.level]}>
                 {` ${isIn ? '⚠' : ' '}  ${findings.length === 1 ? '1 THING NEEDS YOU' : `${findings.length} THINGS NEED YOU`}  `}
@@ -1707,7 +1710,7 @@ export const register: Register = on => {
             </Button>
           </Box>
         )}
-        <Box flexGrow={1} minWidth={4} />
+        <Box flexGrow={1} minWidth={3} />
         <Box flexDirection="column" flexShrink={0} marginRight={2}>
           {isStraining ? (
             <Text><Text color="claude" backgroundColor="white">▀▀▀▀▀</Text><Text color="white">{isIn ? '▚' : '▞'}</Text></Text>
@@ -1718,28 +1721,6 @@ export const register: Register = on => {
         </Box>
         {true && (
           <Box flexDirection="column" flexShrink={0} marginRight={1}>
-            {goalList.length === 0 ? (
-              <Button key="goals" plain onPress={() => $.ui.open({ id: 'goals', title: 'Session goals' })}>
-                <Text>
-                  <Text>🎯 </Text>
-                  <Text color="inactive">○○○○○</Text>
-                  <Text bold> 0/0</Text>
-                  {isPlanning && <Text dimColor> planning…</Text>}
-                </Text>
-              </Button>
-            ) : goalList.length > 0 ? (
-              <Button key="goals" plain onPress={() => $.ui.open({ id: 'goals', title: 'Session goals' })}>
-                <Text>
-                  <Text>🎯 </Text>
-                  <Text color={done === goalList.length ? 'success' : 'claude'}>{'●'.repeat(dots[0])}</Text>
-                  <Text color="inactive">{'○'.repeat(dots[1])}</Text>
-                  <Text bold> {done}/{goalList.length}</Text>
-                  {fc.left !== undefined && done < goalList.length && <Text dimColor> · ~{fmtSpan(fc.left)} left</Text>}
-                </Text>
-              </Button>
-            ) : (
-              <Text> </Text>
-            )}
             {spend.usd > 0 && (
               <Button key="mod-cost" plain onPress={() => $.ui.open({ id: 'mod-cost', title: 'What the meter costs' })}>
                 <Text dimColor>⛽ </Text><Text dimColor underline>{usd(spend.usd)}</Text>
@@ -1747,6 +1728,10 @@ export const register: Register = on => {
             )}
           </Box>
         )}
+        <Box flexDirection="column" flexShrink={0} marginLeft={2}>
+          <Button key="details" plain label="More ›" onPress={() => $.ui.open({ id: PANE, title: 'More' })} />
+          <Text> </Text>
+        </Box>
       </Box>
     )
   })

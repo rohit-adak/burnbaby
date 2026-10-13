@@ -13,12 +13,11 @@ burnbaby is a Claude Code mod that shows what your session is costing you, live,
 | Part | What it tells you |
 |---|---|
 | **Session / Weekly bars** | How much of your 5-hour and 7-day limit is used, plus a pace word (`on track`, `a bit fast`, `too fast`) comparing limit used against time elapsed in the window, and when each resets. Click the pace word for the full breakdown. |
-| **🔥 Cache is warm / 🧊 cold** | How long the prompt cache stays warm, what your next message costs while warm, and what it would cost if the cache goes cold. Click for details. |
+| **🔥 Cache warm / 🧊 cold** | How long the prompt cache stays warm, what your next message costs while warm, and what it would cost if the cache goes cold. Click for details. |
 | **Context %** | How full the context window is. |
 | **⚠ N THINGS NEED YOU** | Appears only when something is wrong (context nearly full, cache cold on a big context, limits burning fast, or a threshold you set). Click it to see what's wrong and a one-press fix. Each item can be dismissed. |
 | **More ›** | The full panel (see below). |
 | **The baby** | burnbaby's mascot: a pixel baby that blinks, smiles, breathes, and puts on a headband when it's reasoning hard. |
-| **🎯 ●●○○○ 2/5** | Goals for the current task: Claude's own task list, or a quick plan with time estimates made from your prompt. Click for steps, time spent, time left, and journey summaries (this session / today / this week). |
 | **⛽ $0.23** | What the mod itself has spent (cache warm-ups, plans). Hidden while it's free. |
 
 **More panel**
@@ -67,7 +66,6 @@ The band appears by itself after your first reply. Beyond clicking items in it:
 - **Pace** = share of the limit used ÷ share of the window elapsed.
 - **Costs** are estimates at API list prices (output priced at 5× input, cache reads at a tenth of input, cache writes at 1.25× for 5-minute or 2× for 1-hour). They are not your subscription bill.
 - **Cache lifetime** is learned from the session (assumed 1 hour until a 5-minute expiry is seen).
-- **Goal plans** come from one small Haiku call per task-like prompt (4+ words, not a slash command), costing around a tenth of a cent each. Claude's own task list replaces the plan whenever it makes one.
 - Only what happens after the mod loads is counted.
 
 ## Development
