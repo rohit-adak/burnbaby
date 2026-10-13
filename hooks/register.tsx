@@ -30,7 +30,6 @@ const EMPTY_TALLY: Tally = {
   byType: { input: [0, 0], output: [0, 0], read: [0, 0], write: [0, 0] },
 }
 const tally = atom({ plugin: 'burnbaby', key: 'tally' } as const, EMPTY_TALLY)
-const isDemo = atom({ plugin: 'burnbaby', key: 'isDemo' } as const, false)
 const goals = atom({ plugin: 'burnbaby', key: 'goals' } as const, [] as Goal[])
 const turnAt = atom({ plugin: 'burnbaby', key: 'turnAt' } as const, 0)
 const draft = atom({ plugin: 'burnbaby', key: 'draft' } as const, null as Turn | null)
@@ -566,21 +565,6 @@ const FIXES: Record<Action, string> = {
   warm: 'Press Warm cache below before you step away. It keeps the cache alive so your next message stays cheap.',
 }
 
-const DEMO: Finding[] = [
-  {
-    level: 'bad',
-    title: 'Context 87% full (sample)',
-    detail: 'This is a sample alert. 870k tokens would ride along with every message.',
-    action: 'compact',
-  },
-  {
-    level: 'warn',
-    title: 'Weekly limit burning ahead of the clock (sample)',
-    detail: 'This is a sample alert. 34% used but only 12% of the week has passed.',
-    action: 'sonnet',
-  },
-]
-
 const colorFor = (v: LimitView): string =>
   v.used >= 90 || v.ahead >= 20 ? 'error' : v.used >= 70 || v.ahead >= 8 ? 'warning' : 'success'
 
@@ -758,7 +742,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const saved = (await $.store.get('alertCfg')) as Partial<AlertCfg> | undefined
     if (saved && typeof saved === 'object') await update($, alertCfg, c => ({ ...c, ...saved }))
-    await $.command.register({ name: 'meter', description: 'Open the usage meter pane (/meter focus shows the hard-thinking mascot)', argumentHint: '[focus|alert]' })
+    await $.command.register({ name: 'meter', description: 'Open the usage meter pane' })
     const at = await $.clock.now()
     await update($, startedAt, () => at)
     await refresh($)
@@ -770,22 +754,6 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'meter' }, async ($, e) => {
-    if (e.args.trim() === 'alert') {
-      await update($, isDemo, () => true)
-      $.clock.after(30_000, () => update($, isDemo, () => false))
-
-      return { text: 'Showing a sample alert for 30 seconds. Click it in the band to see the fix panel.' }
-    }
-    if (e.args.trim() === 'focus') {
-      await update($, activity, a => ({ kind: 'thinking', n: a.n + 1 }))
-      await update($, isHard, () => true)
-      $.clock.after(15_000, async () => {
-        await update($, isHard, () => false)
-        await update($, activity, a => ({ kind: 'idle', n: a.n + 1 }))
-      })
-
-      return { text: 'Mascot is in focus mode for 15 seconds.' }
-    }
     await refresh($)
     void $.ui.open({ id: PANE, title: 'More' })
     const at = await read($, now)
@@ -1354,7 +1322,7 @@ export const register: Register = on => {
       ttl: await read($, ttl),
       model: await read($, model),
     }
-    const list = unseen([...((await read($, isDemo)) ? DEMO : []), ...overRules(await read($, alertCfg), snap, await read($, costUsd)), ...analyze(snap).filter(f => f.level === 'bad' || f.level === 'warn')], await read($, dismissed))
+    const list = unseen([...overRules(await read($, alertCfg), snap, await read($, costUsd)), ...analyze(snap).filter(f => f.level === 'bad' || f.level === 'warn')], await read($, dismissed))
     const run = (a: Action) => (a === 'compact' ? compact($) : a === 'sonnet' ? sonnet($) : warm($))
     const label: Record<Action, string> = { compact: 'Compact now', sonnet: 'Use Sonnet', warm: 'Warm cache' }
 
@@ -1598,7 +1566,7 @@ export const register: Register = on => {
       ttl: await read($, ttl),
       model: await read($, model),
     }
-    const findings = unseen([...((await read($, isDemo)) ? DEMO : []), ...overRules(await read($, alertCfg), snap, await read($, costUsd)), ...analyze(snap).filter(f => f.level === 'bad' || f.level === 'warn')], await read($, dismissed))
+    const findings = unseen([...overRules(await read($, alertCfg), snap, await read($, costUsd)), ...analyze(snap).filter(f => f.level === 'bad' || f.level === 'warn')], await read($, dismissed))
     const top = findings[0]
     const hit = Math.round(hitRatio(snap.steps.slice(-10)) * 100)
     const ctxC = snap.ctxPercent >= 85 ? 'error' : snap.ctxPercent >= 60 ? 'warning' : 'success'

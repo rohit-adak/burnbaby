@@ -57,8 +57,6 @@ The band appears by itself after your first reply. Beyond clicking items in it:
 | Command | What it does |
 |---|---|
 | `/meter` | Open the More panel |
-| `/meter focus` | Show the mascot's hard-work headband for 15 seconds |
-| `/meter alert` | Show a sample alert for 30 seconds, to try the fix panel |
 
 ## How the numbers are worked out
 
